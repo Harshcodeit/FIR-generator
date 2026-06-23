@@ -1,0 +1,33 @@
+ollama
+langchain
+langchain-core
+langchain-community
+
+# LLM Providers
+langchain-ollama
+langchain-huggingface
+
+# splitters
+langchain-text-splitters
+
+# document loader
+pypdf
+unstructured
+beautifulsoup4
+lxml
+
+# vector database
+chromadb
+
+# embedding modesl
+sentence-transformers
+
+# env variables
+python-dotenv`
+
+# data handling
+pandas
+numpy
+
+# UI (optional)
+streamlit

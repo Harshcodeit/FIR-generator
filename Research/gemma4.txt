@@ -1,0 +1,14 @@
+In choosing a gemma 4 version, tradeoff between capability and cost of processing cycles,m/y cost and power consumptions
+
+Size - E2B(E stands for effective),E4B,12B,A4B 26B,31B
+
+E4B->reasoning,multimodal,increased context window-128k tokkne
+desc - 4.5B paramters,42 layers
+
+use case - text generation & summarization,chatbots,image data extraction,research
+
+limitations
+training data - quality and diversity of training data influence model's capability
+context and task complexity-opened ended or complex tasks can be challening
+lack of common sense
+

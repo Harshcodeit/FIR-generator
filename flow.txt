@@ -1,0 +1,29 @@
+Citizen Audio
+↓
+Whisper
+↓
+Transcript
+↓
+Gemma (Extraction)
+↓
+Structured FIR JSON
+↓
+Missing Field Checker
+↓
+User Follow-up Questions
+↓
+Complete JSON
+↓
+RAG (BNS + BNSS + FIR Manual)
+↓
+Relevant Legal Sections
+↓
+Gemma (FIR Generation)
+↓
+Verification Layer
+↓
+PDF Generator
+↓
+Final FIR
+
+
