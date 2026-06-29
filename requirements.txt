@@ -23,7 +23,7 @@ chromadb
 sentence-transformers
 
 # env variables
-python-dotenv`
+python-dotenv
 
 # data handling
 pandas
