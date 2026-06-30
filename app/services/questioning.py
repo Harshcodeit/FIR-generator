@@ -7,7 +7,8 @@ from app.utils.helpers import get_missing_fields
 
 from rich import print
 
-def fill_missing_information(report) : 
+def fill_missing_information(report : UserReportSchema) -> UserReportSchema : 
+    """It asks the user to fill in the missing information"""
     data = report.model_dump()
     missing_fields = get_missing_fields(report)
     if missing_fields == []:
@@ -22,15 +23,4 @@ def fill_missing_information(report) :
 
     return report
 
-# testing 
-from app.services.extraction import extract_information
 
-report = extract_information("My bike got stolen near Akash deep enclave")
-print("===========================before filling missing information=====================")
-print(report)
-
-while get_missing_fields(report) : 
-    report = fill_missing_information(report)
-
-print("===========================after filling missing information=====================")
-print(report)

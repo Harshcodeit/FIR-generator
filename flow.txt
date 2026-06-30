@@ -27,3 +27,59 @@ PDF Generator
 Final FIR
 
 
+extract_service
+        │
+        ▼
+partial report
+        │
+        ▼
+question_service
+        │
+        ├── next question
+        ├── update report
+        ├── next question
+        └── ...
+        │
+        ▼
+complete report
+        │
+        ▼
+reasoning_service
+        │
+        ▼
+generation_service
+
+Ingestion flow:
+loaders → chunking → embeddings → vector_store
+
+query → embeddings → vector_store → results
+
+
+
+Legal document
+       │
+       ▼
+Regex Splitter
+       │
+       ▼
+Section 378
+
+Section 379
+
+Section 380
+       │
+       ▼
+Check size
+       │
+ ┌─────┴────────┐
+ │              │
+Small        Huge
+ │              │
+Keep        Recursive Splitter
+ │              │
+ └─────┬────────┘
+       ▼
+Final chunks
+       │
+       ▼
+Embeddings

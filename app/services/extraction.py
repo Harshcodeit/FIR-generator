@@ -9,11 +9,9 @@ parser = load_parser(UserReportSchema)
 
 extract_chain = extract_prompt | llm | parser
 
-def extract_information(incident : str):
+def extract_information(incident : str) -> UserReportSchema:
     """It extracts the key information from the user's incident"""
     return extract_chain.invoke({
         'format_instructions' : parser.get_format_instructions(),
         'incident' : incident
     })
-
-print(extract_information("My bike got stolen near Akash deep enclave"))
