@@ -13,19 +13,33 @@ from app.rag.vectorstore import get_vectorstore
 
 
 # add to vector store
-def add_documents(chunks : list[Document]) -> Chroma :
-    vectorstore = get_vectorstore()
+def add_documents(payload : dict) -> Chroma :
+    """Receives chunks and collection name,then commits them directly"""
+    chunks = payload['chunks']
+    collection_name = payload['collection_name']
+
+    # grab right collection
+    vectorstore = get_vectorstore(collection_name=collection_name)
     vectorstore.add_documents(chunks)
 
     return vectorstore
 
 #  raw documents -> langchain documents -> chunks -> vector id documents
 ingest_chain = (
-    RunnableLambda(load_pdf) |
-    RunnableLambda(split_legal_document) |
+    RunnableLambda(lambda payload : {
+        'chunks' : split_legal_document(load_pdf(payload['file_name'])),
+        'collection_name' : payload['collection_name']
+    }) |
     RunnableLambda(add_documents)
 )
 
-def ingest_pdf(file_path : str) -> None :
-    ingest_chain.invoke(file_path)
+def ingest_pdf(file_name : str,collection_name : str) -> None :
+    ingest_chain.invoke({
+        'file_name' : file_name,
+        'collection_name' : collection_name
+    })
 
+
+ingest_pdf('BNS.pdf','bns')
+ingest_pdf('BNSS.pdf','bnss')
+print("Loaded...")

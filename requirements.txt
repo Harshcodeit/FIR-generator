@@ -12,12 +12,18 @@ langchain-text-splitters
 
 # document loader
 pypdf
+pdfplumber
 unstructured
 beautifulsoup4
 lxml
+reportlab
+pymupdf
+matplotlib
+weasyprint
 
 # vector database
 chromadb
+langchain-chroma
 
 # embedding modesl
 sentence-transformers

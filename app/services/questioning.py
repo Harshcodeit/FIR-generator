@@ -1,11 +1,13 @@
-from app.services.extraction import extract_information
 from app.prompts.question_map import QUESTION_MAP
 
 from app.schemas.user_report import UserReportSchema
 
+# get missing fields from report using question map
 from app.utils.helpers import get_missing_fields
 
-from rich import print
+
+print("loaded questioning service ===============")
+
 
 def fill_missing_information(report : UserReportSchema) -> UserReportSchema : 
     """It asks the user to fill in the missing information"""

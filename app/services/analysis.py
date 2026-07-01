@@ -4,8 +4,9 @@ from langchain_core.messages import AIMessage
 # get user schema
 from app.schemas.user_report import UserReportSchema
 
-# send reasoning prompt
+# send reasoning prompt and queries
 from app.prompts.analyse import analysis_prompt
+from app.prompts.retrieve import BNS_QUERY,BNSS_QUERY
 
 # use retriever to get retrieved context
 from app.services.retrieval import retrieve
@@ -14,7 +15,11 @@ from app.services.retrieval import retrieve
 from app.core.llm import load_llm
 
 
+print("loaded analysis service ===============")
+
+
 llm = load_llm()
+
 
 def build_reasoning_input(report : UserReportSchema) -> dict :
     query = f"""
@@ -27,7 +32,10 @@ def build_reasoning_input(report : UserReportSchema) -> dict :
     - Ingredients required to constitute the offence.
     """
 
-    docs = retrieve(query)
+    bns_query = BNS_QUERY.format(offence = report.offence_description)
+    bnss_query =BNSS_QUERY.format(offence = report.offence_description)
+
+    docs = retrieve(bns_query,bnss_query)
 
     context = "\n\n".join(
         doc.page_content for doc in docs
@@ -46,6 +54,5 @@ analyse_chain = (
 
 def get_relevant_data(report : UserReportSchema) -> AIMessage :
     return analyse_chain.invoke(report)
-
 
 

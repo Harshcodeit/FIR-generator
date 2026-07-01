@@ -5,3 +5,10 @@ from app.rag.config import DOCS_PATH
 def load_pdf(filename : str)  -> list[Document] :
     file_path = DOCS_PATH / filename
     return PyPDFLoader(str(file_path)).load()
+
+
+
+
+
+
+

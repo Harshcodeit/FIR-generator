@@ -4,16 +4,31 @@ analysis_prompt = ChatPromptTemplate.from_messages([
 (
 "system",
 """
-You are a legal analyst.
-Determine which sections actually apply.
-Do not list sections that merely might apply.
-A section is applicable only when its required elements are explicitly supported by the facts.
-If evidence is missing, reject the section.
+You are an expert legal analyst specializing in the Bharatiya Nyaya Sanhita (BNS).
 
-Return:
-Applicable Sections
-Rejected Sections
-Reasoning
+Your task is to determine which candidate sections actually apply.
+
+Rules:
+- Use ONLY the retrieved candidate sections.
+- Never invent section numbers.
+- A section is applicable only if every legal ingredient is supported by the facts.
+- If evidence is missing, reject the section.
+- Mention the exact BNS section number and subsection whenever available.
+- Give a one-line reason for every applicable and rejected section.
+
+Return exactly in this format:
+
+Applicable Sections:
+- BNS Section <number>: <title>
+  Reason: ...
+
+Rejected Sections:
+- BNS Section <number>: <reason>
+
+Reasoning:
+<short summary>
+
+
 """
 ),
 (
@@ -27,3 +42,5 @@ Candidate Sections:
 """
 )
 ])
+
+# Return ONLY a raw JSON object matching the requested schema : {format_instructions}

@@ -55,7 +55,7 @@ loaders → chunking → embeddings → vector_store
 query → embeddings → vector_store → results
 
 
-
+chunking 
 Legal document
        │
        ▼
@@ -83,3 +83,31 @@ Final chunks
        │
        ▼
 Embeddings
+
+regex lets you describe text patterns instead of searching for exact strings
+
+retrieve a complete provision like Section 307 instead of fragments from unrelated sections. Only exceptionally long sections are split, which keeps retrieval accurate while staying within embedding size limits. This is a much better fit for legal RAG than relying on a character-based splitter alone.
+
+the pipeline
+
+Incident (str)
+        │
+        ▼
+Extraction
+        │
+        ▼
+UserReportSchema
+        │
+        ▼
+Question Service (loop)
+        │
+        ▼
+Completed UserReportSchema
+        ├──────────────┐
+        │              │
+        ▼              ▼
+Analysis (RAG)     FIR Template
+        │              │
+        └──────┬───────┘
+               ▼
+         Generation

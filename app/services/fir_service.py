@@ -8,6 +8,8 @@ from app.utils.loaders import load_pdf
 # load model to generate FIR
 from app.core.llm import load_llm
 
+print("loaded model")
+
 # to validate report
 from app.schemas.user_report import UserReportSchema
 
@@ -54,7 +56,10 @@ complete_report = fill_missing_information(report)
 
 relevant_data = get_relevant_data(complete_report)
 
+print(relevant_data.content)
+
 print(generate_fir({
     'report': complete_report,
     'legal_context' : relevant_data
 }))
+
