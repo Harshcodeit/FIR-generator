@@ -1,203 +1,46 @@
-import streamlit as st
-from dotenv import load_dotenv
+from app.services.extraction import extract_information
+from app.services.questioning import fill_missing_information
+from app.services.analysis import get_relevant_data
+from app.services.fir_service import generate_fir
+from app.services.pdf_service import generate_pdf
+from app.utils.helpers import get_missing_fields
 
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_ollama import ChatOllama
-
-load_dotenv()
-
-st.set_page_config(page_title="AI FIR Generator")
-
-st.title("AI FIR Generator")
-
-# ---------------- Models ----------------
-
-@st.cache_resource
-def load_resources():
-
-    llm = ChatOllama(
-        model="mistral:7b",
-        temperature=0
-    )
-
-    embedding_model = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
-
-    vectorstore = Chroma(
-        persist_directory="chroma_db",
-        embedding_function=embedding_model
-    )
-
-    retriever = vectorstore.as_retriever(
-        search_type="mmr",
-        search_kwargs={"k": 4}
-    )
-
-    fir_format = PyPDFLoader(
-        "./Documents/format.pdf"
-    ).load()
-
-    return llm, retriever, fir_format
+from rich import print
 
 
-llm, retriever, fir_format = load_resources()
+story = """My name is Harshit Singh. I am 24 years old, an Indian national, and I work as a Software Engineer. I live at 14 Akash Deep Enclave, Kolkata, West Bengal. My phone number is 
 
-# ---------------- UI ----------------
+On 30 June 2026 at around 4:00 PM, I parked my black Royal Enfield Classic 350 motorcycle near Akash Deep Enclave, close to City Centre Mall in Kolkata, West Bengal. When I returned after about an hour, the motorcycle was missing. The estimated value of the motorcycle is around ₹1,80,000.
 
-offence_description = st.text_input(
-"Offence Description",
-placeholder="Bike stolen near mall"
-)
+I do not know the identity of the accused, but a nearby shopkeeper mentioned seeing a man wearing a black hoodie and blue jeans loitering around the parking area before the theft.
 
-approximate_date = st.text_input("Date")
-approximate_time = st.text_input("Time")
-
-location_name = st.text_input("Location")
-city = st.text_input("City")
-state = st.text_input("State")
-
-reporter_full_name = st.text_input("Full Name")
-reporter_occupation = st.text_input("Occupation")
-
-# ---------------- Prompts ----------------
-
-prompt_analysis = ChatPromptTemplate.from_messages([
-(
-"system",
-"""
-You are a legal analyst.
-
-Determine which sections actually apply.
-
-Do not list sections that merely might apply.
-
-A section is applicable only when its required elements are explicitly supported by the facts.
-
-If evidence is missing, reject the section.
-
-Return:
-Applicable Sections
-Rejected Sections
-Reasoning
-"""
-),
-(
-"human",
-"""
-Facts:
-{report}
-
-Candidate Sections:
-{retrieved_docs}
-"""
-)
-])
-
-prompt_generate = ChatPromptTemplate.from_messages([
-(
-"system",
-"""
-You are an Indian police officer.
-
-Generate a formal FIR.
-
-Use ONLY the legal sections provided.
-
-If information is unavailable write Not Available.
-
-Never use placeholders.
-"""
-),
-(
-"human",
-"""
-Facts:
-{report}
-
-Legal Context:
-{legal_context}
-
-FIR Template:
-{fir_template}
-
-Generate the FIR.
-"""
-)
-])
-
-# ---------------- Generate ----------------
-
-if st.button("Generate FIR"):
+I could not report the matter immediately because I was searching for the motorcycle in nearby areas and also checking with local security guards. Therefore, I am filing this complaint today."""
 
 
-    report = {
-        "offence_description": offence_description,
-        "approximate_date": approximate_date,
-        "approximate_time": approximate_time,
-        "location_name": location_name,
-        "city": city,
-        "state": state,
-        "reporter_full_name": reporter_full_name,
-        "reporter_occupation": reporter_occupation
-    }
+report = extract_information(story)
 
-    query = f"""
+print("Incomplete report","="*100)
+print(report)
+
+while get_missing_fields(report):
+    report = fill_missing_information(report)
+
+print("complete report","="*100)
+print(report)
 
 
-    Description of offence:
-    {offence_description}
+legal_analysis = get_relevant_data(report)
+print("Legal analysis", "="*100)
+print(legal_analysis)
 
-    What are the relevant BNS sections and punishment?
-    """
+fir = generate_fir({
+    'report' : report,
+    'legal_context' : legal_analysis
+})
+print("fir","="*100)
+print(fir)
 
-
-    retrieved_docs = retriever.invoke(query)
-
-    retrieved_context = "\n\n".join(
-        doc.page_content
-        for doc in retrieved_docs
-    )
-
-    fir_template = "\n\n".join(
-        page.page_content
-        for page in fir_format
-    )
-
-    with st.spinner("Analyzing law..."):
-
-        analysis_prompt = prompt_analysis.invoke({
-            "report": report,
-            "retrieved_docs": retrieved_context
-        })
-
-        legal_context = llm.invoke(
-            analysis_prompt
-        ).content
-
-    with st.spinner("Generating FIR..."):
-
-        fir_prompt = prompt_generate.invoke({
-            "report": report,
-            "legal_context": legal_context,
-            "fir_template": fir_template
-        })
-
-        fir_text = llm.invoke(
-            fir_prompt
-        ).content
-
-    st.subheader("Legal Analysis")
-    st.text(legal_context)
-
-    st.subheader("Generated FIR")
-
-    st.text_area(
-        "",
-        value=fir_text,
-        height=600
-    )
+fir_path = generate_pdf(report,legal_analysis,fir,'fir.pdf')
+print("fir_path","="*100)
+print(fir_path)
 

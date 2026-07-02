@@ -1,271 +1,282 @@
 # import re
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
-# from langchain_core.documents import Document
-
-
-# def split_legal_document(
-#     docs: list[Document], 
-#     chunk_size: int = 1000, 
-#     chunk_overlap: int = 200
-# ) -> list[Document]:
-#     """Splits plain legal text cleanly by trapping section transitions"""
-    
-    
-
-#     legal_pattern = re.compile(
-#     r"(?m)^\s*(\d+)\.\s"
-#     )
-    
-#     # 2. Define standard fallback boundary rules
-#     splitter = RecursiveCharacterTextSplitter(
-#         chunk_size=chunk_size,
-#         chunk_overlap=chunk_overlap,
-#         separators=["\n\n", "\n", " ", ""]
-#     )
-
-    
-#     final_chunks = []
-#     for doc in docs :
-#         initial_sections = legal_pattern.split(doc.page_content)
-
-#         for section in initial_sections :
-#             section = section.strip()
-#             if not section or len(section) < 40:
-#                 continue
-
-#             header_match = re.match(r'^(\d+\s*\.\s*)', section)
-#             section_prefix = f"[Section {header_match.group(1).strip()}] " if header_match else ""
-
-
-#             # if section size is lesser than chunk size
-#             if len(section) <= chunk_size:
-#                 doc_content = section if section.startswith(section_prefix) else section_prefix + section
-#                 final_chunks.append(
-#                     Document(
-#                         page_content=doc_content,
-#                         metadata = doc.metadata.copy()
-#                     )
-#                 )
-
-#             # if larger , use the fallback splitter
-#             else:
-#                 for chunk in fallback_splitter.split_text(section):
-#                     content = chunk if chunk.startswith(section_prefix) else section_prefix + chunk
-#                     final_chunks.append(
-#                         Document(
-#                             page_content=content,
-#                             metadata = doc.metadata.copy()
-#                         )
-#                     )
-            
-#     return final_chunks
-
-
-
-
-# import re
 
 # from langchain_core.documents import Document
 # from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-# SECTION_PATTERN = re.compile(
-#     r"(?m)^\s*(\d+)\.\s"
-# )
+# SECTION_PATTERN = re.compile(r"(?m)^\s*(\d+)\.")
 
 
 # def split_legal_document(
 #     docs: list[Document],
-#     chunk_size: int = 1000,
-#     chunk_overlap: int = 200
+#     chunk_size: int = 3500,
+#     chunk_overlap: int = 500,
 # ) -> list[Document]:
 
 #     splitter = RecursiveCharacterTextSplitter(
 #         chunk_size=chunk_size,
 #         chunk_overlap=chunk_overlap,
-#         separators=["\n\n", "\n", ". ", " ", ""]
+#         separators=[
+#             "\n\n",
+#             "\n",
+#             ". ",
+#             " ",
+#             ""
+#         ]
 #     )
 
-#     # --------- Build complete sections ---------
+#     # Merge every page into one big text
+#     full_text = "\n".join(doc.page_content for doc in docs)
+
+#     matches = list(SECTION_PATTERN.finditer(full_text))
 
 #     sections = []
 
-#     current_text = ""
-#     current_metadata = None
+#     for i, match in enumerate(matches):
 
-#     for doc in docs:
+#         start = match.start()
 
-#         text = doc.page_content.strip()
-
-#         if not text:
-#             continue
-
-#         if SECTION_PATTERN.search(text):
-
-#             if current_text:
-#                 sections.append(
-#                     Document(
-#                         page_content=current_text,
-#                         metadata=current_metadata.copy()
-#                     )
-#                 )
-
-#             current_text = text
-#             current_metadata = doc.metadata
-
+#         if i + 1 < len(matches):
+#             end = matches[i + 1].start()
 #         else:
+#             end = len(full_text)
 
-#             if current_text:
-#                 current_text += "\n\n" + text
+#         section_text = full_text[start:end].strip()
 
-#             else:
-#                 current_text = text
-#                 current_metadata = doc.metadata
-
-#     if current_text:
 #         sections.append(
 #             Document(
-#                 page_content=current_text,
-#                 metadata=current_metadata.copy()
+#                 page_content=section_text,
+#                 metadata=docs[0].metadata.copy()
 #             )
 #         )
-
-#     # --------- Split oversized sections ---------
 
 #     final_chunks = []
 
 #     for section in sections:
 
+#         header_match = SECTION_PATTERN.match(section.page_content)
+
+#         if header_match:
+#             section_number = header_match.group(1)
+#             header = f"[Section {section_number}]"
+#         else:
+#             header = "[Unknown Section]"
+
 #         if len(section.page_content) <= chunk_size:
 
-#             final_chunks.append(section)
-
-#         else:
-
-#             header = section.page_content.split("\n", 1)[0]
-
-#             child_chunks = splitter.split_text(section.page_content)
-
-#             for chunk in child_chunks:
-
-#                 final_chunks.append(
-#                     Document(
-#                         page_content=f"{header}\n\n{chunk}",
-#                         metadata=section.metadata.copy()
-#                     )
+#             final_chunks.append(
+#                 Document(
+#                     page_content=f"{header}\n\n{section.page_content}",
+#                     metadata=section.metadata.copy()
 #                 )
+#             )
+
+#             continue
+
+#         child_chunks = splitter.split_text(section.page_content)
+
+#         for chunk in child_chunks:
+
+#             final_chunks.append(
+#                 Document(
+#                     page_content=f"{header}\n\n{chunk}",
+#                     metadata=section.metadata.copy()
+#                 )
+#             )
 
 #     return final_chunks
-
 
 import re
 
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# Matches:
-# 261.
-# 262.
+
+# Matches legal section starts:
 # 303.
-SECTION_PATTERN = re.compile(r"(?m)^\s*\d+\.")
+# 307.Whoever
+# 531. Repeal
+#
+# Does NOT match:
+# 2.5.4.20
+SECTION_PATTERN = re.compile(r"(?m)^\s*(\d{1,4})\.(?!\d)")
+
+
+def _clean_pdf_text(text: str) -> str:
+    # Remove long PDF/Gazette divider garbage
+    text = re.sub(r"_{10,}", "\n", text)
+
+    # Remove common Gazette headers/footers
+    text = re.sub(r"(?im)^.*THE GAZETTE OF INDIA EXTRAORDINARY.*$", "", text)
+    text = re.sub(r"(?im)^.*\[Part II.*$", "", text)
+    text = re.sub(r"(?im)^Sec\.\s*\d+\].*$", "", text)
+
+    # Remove standalone page numbers
+    text = re.sub(r"(?m)^\s*\d+\s*$", "", text)
+
+    # Remove digital signature garbage
+    text = re.sub(r"(?im)^.*Digitally signed.*$", "", text)
+    text = re.sub(r"(?im)^.*Government of India Press.*$", "", text)
+    text = re.sub(r"(?im)^.*serialNumber=.*$", "", text)
+    text = re.sub(r"(?im)^.*postalCode=.*$", "", text)
+    text = re.sub(r"(?im)^.*pseudonym=.*$", "", text)
+    text = re.sub(r"(?im)^.*Date:\s*\d{4}\.\d{2}\.\d{2}.*$", "", text)
+
+    # Remove chapter side headings that leak into previous section
+    text = re.sub(r"(?m)^\s*Of theft\s*$", "", text)
+    text = re.sub(r"(?m)^\s*Of extortion\s*$", "", text)
+    text = re.sub(r"(?m)^\s*Of robbery and dacoity\s*$", "", text)
+
+    # Collapse excessive blank lines
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
+
+
+def _take_section_opening(text: str, limit: int = 1000) -> str:
+    text = text.strip()
+
+    if len(text) <= limit:
+        return text
+
+    cut = text.rfind("\n", 0, limit)
+
+    if cut == -1:
+        cut = text.rfind(". ", 0, limit)
+
+    if cut == -1:
+        cut = limit
+
+    return text[:cut].strip()
 
 
 def split_legal_document(
     docs: list[Document],
-    chunk_size: int = 1000,
-    chunk_overlap: int = 200,
+    chunk_size: int = 8000,
+    chunk_overlap: int = 500,
 ) -> list[Document]:
+
+    if not docs:
+        return []
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        separators=["\n\n", "\n", ". ", " ", ""],
+        separators=[
+            "\n\n",
+            "\n",
+            ". ",
+            " ",
+            ""
+        ]
     )
 
-    sections: list[Document] = []
+    # Merge all pages first
+    full_text = "\n".join(doc.page_content for doc in docs)
+    full_text = _clean_pdf_text(full_text)
 
-    current_section = ""
-    current_metadata = None
+    matches = list(SECTION_PATTERN.finditer(full_text))
 
-    for doc in docs:
+    # First collect all section candidates
+    # Same section may appear multiple times:
+    # 303. Theft.             -> title/table entry
+    # 303. Theft.—(1) Whoever -> actual full section
+    section_map: dict[str, str] = {}
 
-        text = doc.page_content.strip()
+    for i, match in enumerate(matches):
+        start = match.start()
 
-        if not text:
+        if i + 1 < len(matches):
+            end = matches[i + 1].start()
+        else:
+            end = len(full_text)
+
+        section_text = full_text[start:end].strip()
+
+        if not section_text:
             continue
 
-        matches = list(SECTION_PATTERN.finditer(text))
+        header_match = SECTION_PATTERN.match(section_text)
 
-        # No new section on this page → continuation
-        if not matches:
-            if current_section:
-                current_section += "\n\n" + text
-            else:
-                current_section = text
-                current_metadata = doc.metadata
+        if not header_match:
             continue
 
-        # Process every section found on this page
-        for i, match in enumerate(matches):
+        section_number = header_match.group(1)
 
-            start = match.start()
-
-            if i + 1 < len(matches):
-                end = matches[i + 1].start()
-            else:
-                end = len(text)
-
-            section_text = text[start:end].strip()
-
-            # First section may be continuation of previous page
-            if i == 0 and current_section:
-
-                current_section += "\n\n" + section_text
-
-                sections.append(
-                    Document(
-                        page_content=current_section,
-                        metadata=current_metadata.copy(),
-                    )
-                )
-
-                current_section = ""
-                current_metadata = None
-
-            else:
-
-                sections.append(
-                    Document(
-                        page_content=section_text,
-                        metadata=doc.metadata.copy(),
-                    )
-                )
-
-    # Leftover section
-    if current_section:
-        sections.append(
-            Document(
-                page_content=current_section,
-                metadata=current_metadata.copy(),
-            )
-        )
+        # Keep the longest version of the same section.
+        # This removes title-only chunks like:
+        # 303. Theft.
+        if section_number not in section_map:
+            section_map[section_number] = section_text
+        else:
+            if len(section_text) > len(section_map[section_number]):
+                section_map[section_number] = section_text
 
     final_chunks: list[Document] = []
 
-    for section in sections:
+    # Process sections in numeric order
+    for section_number in sorted(section_map.keys(), key=lambda x: int(x)):
+        section_text = section_map[section_number].strip()
 
-        if len(section.page_content) <= chunk_size:
-            final_chunks.append(section)
+        if not section_text:
             continue
 
-        header = section.page_content.split("\n", 1)[0]
+        header = f"[Section {section_number}]"
 
-        for chunk in splitter.split_text(section.page_content):
+        metadata = docs[0].metadata.copy()
+        metadata["section_number"] = section_number
+        metadata["parent_id"] = f"section_{section_number}"
+
+        # Keep normal legal sections fully intact
+        if len(section_text) <= chunk_size:
+            final_chunks.append(
+                Document(
+                    page_content=f"{header}\n\n{section_text}",
+                    metadata={
+                        **metadata,
+                        "chunk_type": "full_section",
+                        "chunk_index": 0,
+                        "total_chunks": 1,
+                    }
+                )
+            )
+
+            continue
+
+        # Split only very large sections
+        section_opening = _take_section_opening(section_text, limit=1000)
+
+        child_chunks = splitter.split_text(section_text)
+
+        for idx, chunk in enumerate(child_chunks):
+            chunk_metadata = {
+                **metadata,
+                "chunk_type": "split_large_section",
+                "chunk_index": idx,
+                "total_chunks": len(child_chunks),
+            }
+
+            if idx == 0:
+                page_content = f"""
+{header}
+
+{chunk}
+""".strip()
+            else:
+                page_content = f"""
+{header}
+
+[Section Opening]
+{section_opening}
+
+[Current Text]
+{chunk}
+""".strip()
 
             final_chunks.append(
                 Document(
-                    page_content=f"{header}\n\n{chunk}",
-                    metadata=section.metadata.copy(),
+                    page_content=page_content,
+                    metadata=chunk_metadata
                 )
             )
 
