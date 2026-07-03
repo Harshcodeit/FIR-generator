@@ -16,7 +16,8 @@ from app.services.retrieval import retrieve
 # use llm to get sections that actually apply
 from app.core.llm import load_llm
 
-
+# patch the response of gemma4
+from app.utils.helpers import get_message_text
 
 
 llm = load_llm()
@@ -87,4 +88,5 @@ analyse_chain = (
 
 
 def get_relevant_data(report: UserReportSchema) -> AIMessage:
-    return analyse_chain.invoke(report)
+    response = analyse_chain.invoke(report)
+    return AIMessage(content = get_message_text(response))

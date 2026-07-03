@@ -5,6 +5,8 @@ langchain-community
 
 # LLM Providers
 langchain-ollama
+langchain-google-genai
+google-genai
 langchain-huggingface
 
 # splitters

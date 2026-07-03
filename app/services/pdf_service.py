@@ -21,6 +21,8 @@ from langchain_core.messages import AIMessage
 
 from app.schemas.user_report import UserReportSchema
 
+from app.utils.helpers import get_message_text
+
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -35,6 +37,7 @@ from reportlab.platypus import (
     TableStyle,
     SimpleDocTemplate,
     KeepTogether,
+    Preformatted
 )
 
 # --------------------------------------------------------------------------- #
@@ -176,6 +179,15 @@ FOOTER_LABEL_STYLE = ParagraphStyle(
     parent=BODY_STYLE,
     alignment=TA_CENTER,
     fontSize=8.5,
+)
+
+FIR_FORM_STYLE = ParagraphStyle(
+    "FIRFormText",
+    parent=_stylesheet["Code"],
+    fontName="Courier",
+    fontSize=7.5,
+    leading=10,
+    spaceAfter=4,
 )
 
 
@@ -341,8 +353,10 @@ def build_applicable_sections(story: list, legal_analysis: AIMessage) -> None:
     """
     story.append(section_heading("Applicable Sections"))
 
+    analysis_text = get_message_text(legal_analysis)
     bns_text = extract_section(
-        legal_analysis.content,
+        # legal_analysis.content,
+        analysis_text,
         start_marker="Applicable BNS Sections:",
         end_markers=[
             "Procedurally Relevant BNSS Sections:",
@@ -352,7 +366,8 @@ def build_applicable_sections(story: list, legal_analysis: AIMessage) -> None:
     )
 
     bnss_text = extract_section(
-        legal_analysis.content,
+        # legal_analysis.content,
+        analysis_text,
         start_marker="Procedurally Relevant BNSS Sections:",
         end_markers=[
             "Rejected Sections:",
@@ -379,22 +394,27 @@ def build_applicable_sections(story: list, legal_analysis: AIMessage) -> None:
 
 def build_fir_narrative(story: list, fir: AIMessage) -> None:
     """
-    Renders the FIR narrative as clean, separated paragraphs (blank lines
-    in the source become paragraph breaks rather than a single wall of
-    text with manual <br/> tags).
+    Renders the FIR narrative while preserving line breaks and spacing.
+    This is important because the FIR text is already formatted like a form.
     """
     story.append(section_heading("Generated FIR Narrative"))
 
-    paragraphs = [p.strip() for p in fir.content.split("\n\n") if p.strip()]
-    if not paragraphs:
-        paragraphs = [fir.content.strip()]
+    text = get_message_text(fir).strip()
 
-    for para in paragraphs:
-        # Collapse single newlines within a paragraph into spaces so text
-        # wraps naturally instead of breaking mid-sentence.
-        cleaned = " ".join(line.strip() for line in para.splitlines() if line.strip())
-        story.append(body_paragraph(cleaned))
+    if not text:
+        story.append(body_paragraph("No FIR narrative generated."))
+        return
 
+    # Avoid Helvetica unicode issue if fallback font is active
+    text = safe_text(text)
+
+    story.append(
+        Preformatted(
+            text,
+            FIR_FORM_STYLE,
+            maxLineLength=80
+        )
+    )
 
 def build_footer(story: list) -> None:
     """Signature block."""
@@ -475,6 +495,6 @@ def generate_pdf(
 # --------------------------------------------------------------------------- #
 
 # if __name__ == "__main__":
-from app.core.constants import report, legal_analysis, fir
+# from app.core.constants import report, legal_analysis, fir
 
-generate_pdf(report, legal_analysis, fir)
+# generate_pdf(report, legal_analysis, fir)

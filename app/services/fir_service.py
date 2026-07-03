@@ -4,6 +4,7 @@ from langchain_core.runnables import RunnableLambda
 # fir_template + report + legal_context -> llm -> FIR
 from app.prompts.generate import generate_prompt
 from app.utils.loaders import load_pdf
+from app.utils.helpers import get_message_text
 
 # load model to generate FIR
 from app.core.llm import load_llm
@@ -20,7 +21,7 @@ def build_generation_input(data : dict) -> dict :
 
     return {
         'report' : report.model_dump(),
-        'legal_context' : legal_context.content,
+        'legal_context' : get_message_text(legal_context),
         'fir_template' : template 
     }
 
@@ -33,18 +34,13 @@ generate_chain = (
 )
 
 def generate_fir(data : dict) -> AIMessage :
-    return generate_chain.invoke(data)
+    response = generate_chain.invoke(data)
+    return AIMessage(content = get_message_text(response))
 
 
 
 
-report = """My name is Harshit Singh and my father name is rk singh. I am 24 years old, an Indian national, and I work as a Software Engineer. I live at 14 Akash Deep Enclave, Kolkata, West Bengal. My phone number is 9876543210.
 
-On 30 June 2026 at around 4:00 PM, I parked my black Royal Enfield Classic 350 motorcycle near Akash Deep Enclave, close to City Centre Mall in Kolkata, West Bengal. When I returned after about an hour, the motorcycle was missing. The estimated value of the motorcycle is around ₹1,80,000.
-
-I do not know the identity of the accused, but a nearby shopkeeper mentioned seeing a man wearing a black hoodie and blue jeans loitering around the parking area before the theft.
-
-I could not report the matter immediately because I was searching for the motorcycle in nearby areas and also checking with local security guards. Therefore, I am filing this complaint today."""
 
 
 
