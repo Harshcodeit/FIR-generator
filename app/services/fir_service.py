@@ -11,11 +11,12 @@ from app.core.llm import load_llm
 # to validate report
 from app.schemas.user_report import UserReportSchema
 
-BASE_DIR = Path(__file__).resolve().parents[2]
-FORMAT_PDF_PATH = BASE_DIR / "documents" / "format.pdf"
+from functools import lru_cache
 
+@lru_cache(maxsize=1)
+def get_fir_template() -> str:
+    return load_pdf("format.pdf")[0].page_content
 
-template = load_pdf(FORMAT_PDF_PATH)[0].page_content
 
 def build_generation_input(data : dict) -> dict :
     report : UserReportSchema = data['report']
@@ -24,7 +25,7 @@ def build_generation_input(data : dict) -> dict :
     return {
         'report' : report.model_dump(),
         'legal_context' : get_message_text(legal_context),
-        'fir_template' : template 
+        'fir_template' : get_fir_template()
     }
 
 llm = load_llm()
