@@ -40,6 +40,6 @@ def ingest_pdf(file_name : str,collection_name : str) -> None :
     })
 
 
-ingest_pdf('BNS.pdf','bns')
-ingest_pdf('BNSS.pdf','bnss')
-print("Loaded...")
+# ingest_pdf('BNS.pdf','bns')
+# ingest_pdf('BNSS.pdf','bnss')
+# print("Loaded...")
