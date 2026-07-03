@@ -12,7 +12,8 @@ from app.core.llm import load_llm
 from app.schemas.user_report import UserReportSchema
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-FORMAT_PDF_PATH = BASE_DIR / "format.pdf"
+FORMAT_PDF_PATH = BASE_DIR / "documents" / "format.pdf"
+
 
 template = load_pdf(FORMAT_PDF_PATH)[0].page_content
 
