@@ -1,3 +1,4 @@
+from pathlib import Path
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableLambda
 
@@ -5,15 +6,15 @@ from langchain_core.runnables import RunnableLambda
 from app.prompts.generate import generate_prompt
 from app.utils.loaders import load_pdf
 from app.utils.helpers import get_message_text
-
 # load model to generate FIR
 from app.core.llm import load_llm
-
-
 # to validate report
 from app.schemas.user_report import UserReportSchema
 
-template = load_pdf('format.pdf')[0].page_content
+BASE_DIR = Path(__file__).resolve().parents[2]
+FORMAT_PDF_PATH = BASE_DIR / "format.pdf"
+
+template = load_pdf(FORMAT_PDF_PATH)[0].page_content
 
 def build_generation_input(data : dict) -> dict :
     report : UserReportSchema = data['report']
