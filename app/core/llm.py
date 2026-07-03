@@ -23,16 +23,23 @@
 from functools import lru_cache
 import os
 from dotenv import load_dotenv
+import streamlit as st
 from langchain_google_genai import ChatGoogleGenerativeAI
-from app.utils.helpers import get_message_text
 
 load_dotenv()
 
-@lru_cache(maxsize=1)
+def get_api_key():
+    try:
+        return st.secrets["GOOGLE_API_KEY"]   # Streamlit Cloud
+    except Exception:
+        return os.getenv("GOOGLE_API_KEY")    # Local .env
+
+
+@lru_cache(maxsize=2)
 def load_llm(model : str = 'gemma-4-31b-it'):
     return ChatGoogleGenerativeAI(
         model=model,
-        google_api_key=os.getenv("GOOGLE_API_KEY"),
+        google_api_key=get_api_key(),
         temperature=0.2,
     )
 
