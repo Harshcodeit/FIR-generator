@@ -38,7 +38,7 @@ FIELD_LABELS = {
     "delay_reason": "Reason for Delay",
     "accused_description": "Accused Description",
     "property_type": "Property Type",
-    "estimated_value": "Estimated Value",
+    # "estimated_value": "Estimated Value",
 }
 
 
